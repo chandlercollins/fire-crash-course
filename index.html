@@ -130,6 +130,19 @@ h1 .accent{color:var(--accent);}
 .seg.with-rate .rate{font-size:10px;font-weight:500;opacity:.62;}
 .seg.with-rate button.on .rate{opacity:.85;}
 .cap{font-size:11px;color:var(--ink-faint);margin:2px 0 0;}
+/* "Make it yours" editable-inputs panel */
+.mine{margin:10px 0 4px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.015);max-width:760px;}
+.mine summary{cursor:pointer;list-style:none;padding:10px 14px;font-size:13px;font-weight:600;color:var(--accent);}
+.mine summary::-webkit-details-marker{display:none;}
+.mine[open] summary{border-bottom:1px solid var(--line);}
+.mine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 16px;padding:14px;}
+.mine-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);}
+.mine-grid input{background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:14px;padding:7px 9px;font-variant-numeric:tabular-nums;width:100%;}
+.mine-grid input:focus{outline:none;border-color:var(--accent);}
+.mine-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:0 14px 14px;}
+.mine-actions button{background:var(--panel);border:1px solid var(--line);color:var(--ink-soft);font-size:12.5px;padding:7px 14px;border-radius:7px;cursor:pointer;}
+.mine-actions button:hover{border-color:var(--accent);color:var(--ink);}
+.mine-note{font-size:11px;color:var(--ink-faint);}
 /* View 2 — "toward your future" running total + source breakdown */
 .flow-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin:8px 0 2px;font-size:12.5px;color:var(--ink-soft);line-height:1.45;}
 .flow-sum .lbl{color:var(--ink-faint);letter-spacing:.01em;}
@@ -250,19 +263,38 @@ svg{display:block;width:100%;height:100%;overflow:visible;}
     <h1>The road to <span class="accent" id="h-fire">$6.25M</span>.</h1>
     <p class="sub">A crash course in how the pieces of financial independence fit together — followed through one example household. This first view projects their investments (95% stocks, 5% cash). The white line is the most likely path; the shaded bands are the range of luck. Where it crosses the red line, work becomes optional. <b>Drag every control</b> to see what moves the date.</p>
 
+    <details class="mine" id="mine">
+      <summary>✎ Make it yours — plug in your own numbers</summary>
+      <div class="mine-grid">
+        <label>Your salary<input type="number" id="in-income1" min="0" step="1000" /></label>
+        <label>Partner salary<input type="number" id="in-income2" min="0" step="1000" /></label>
+        <label>Annual bonus<input type="number" id="in-bonus" min="0" step="1000" /></label>
+        <label>Invest / year<input type="number" id="in-invest" min="0" step="1000" /></label>
+        <label>Current investments<input type="number" id="in-start" min="0" step="1000" /></label>
+        <label>Debt balance<input type="number" id="in-debt" min="0" step="1000" /></label>
+        <label>Debt rate %<input type="number" id="in-debtrate" min="0" max="40" step="0.1" /></label>
+        <label>Debt payment / mo<input type="number" id="in-debtpay" min="0" step="50" /></label>
+        <label>Tax rate %<input type="number" id="in-tax" min="0" max="60" step="1" /></label>
+        <label>Retirement spend / yr<input type="number" id="in-retire" min="0" step="1000" /></label>
+      </div>
+      <div class="mine-actions">
+        <button type="button" id="mine-reset">Reset to example</button>
+        <span class="mine-note">Saved in your browser only — nothing leaves your device.</span>
+      </div>
+    </details>
+
     <div class="controls">
       <span class="seg-label">Invest / yr</span>
       <div class="seg with-rate" id="savings-toggle">
-        <button data-v="80000" class="on"><span class="amt">$80k</span><span class="rate"></span></button>
-        <button data-v="100000"><span class="amt">$100k</span><span class="rate"></span></button>
-        <button data-v="120000"><span class="amt">$120k</span><span class="rate"></span></button>
-        <button data-v="140000"><span class="amt">$140k</span><span class="rate"></span></button>
+        <button data-v="15000"><span class="amt">$15k</span><span class="rate"></span></button>
+        <button data-v="30000" class="on"><span class="amt">$30k</span><span class="rate"></span></button>
+        <button data-v="50000"><span class="amt">$50k</span><span class="rate"></span></button>
       </div>
       <span class="seg-label" style="margin-left:6px">Spend / yr in retirement</span>
       <div class="seg" id="retire-toggle">
-        <button data-v="150000">$150k</button>
-        <button data-v="250000" class="on">$250k</button>
-        <button data-v="400000">$400k</button>
+        <button data-v="50000">$50k</button>
+        <button data-v="70000" class="on">$70k</button>
+        <button data-v="100000">$100k</button>
       </div>
       <span class="seg-label" style="margin-left:6px">Withdraw</span>
       <div class="seg" id="swr-toggle">
@@ -323,10 +355,9 @@ svg{display:block;width:100%;height:100%;overflow:visible;}
       </div>
       <span class="seg-label" style="margin-left:8px">Savings tier</span>
       <div class="seg with-rate" id="savings-toggle-2">
-        <button data-v="80000" class="on"><span class="amt">$80k</span><span class="rate"></span></button>
-        <button data-v="100000"><span class="amt">$100k</span><span class="rate"></span></button>
-        <button data-v="120000"><span class="amt">$120k</span><span class="rate"></span></button>
-        <button data-v="140000"><span class="amt">$140k</span><span class="rate"></span></button>
+        <button data-v="15000"><span class="amt">$15k</span><span class="rate"></span></button>
+        <button data-v="30000" class="on"><span class="amt">$30k</span><span class="rate"></span></button>
+        <button data-v="50000"><span class="amt">$50k</span><span class="rate"></span></button>
       </div>
       <div class="legend" style="margin-left:6px">
         <span class="chip"><span class="swatch" style="background:var(--flow-savings)"></span>Income &amp; savings</span>
@@ -407,36 +438,37 @@ svg{display:block;width:100%;height:100%;overflow:visible;}
 const DATA = {
   people:{ p1:{age:32}, p2:{age:30} },   // example two-income household
 
-  // balance sheet  — ILLUSTRATIVE EXAMPLE NUMBERS, not anyone's real data
-  startInvestments: 250000,
-  studentLoan:       60000,
+  // balance sheet  — ILLUSTRATIVE EXAMPLE NUMBERS, not anyone's real data.
+  // These are the editable defaults; visitors can overwrite them with their own.
+  startInvestments: 40000,
+  studentLoan:       30000,
   loanRate:         0.06,
 
-  // income (annual) — example two-earner household
+  // income (annual) — example two-earner household (~$130k)
   income:{
-    p1Base:  150000,   // higher earner, base
-    p1Bonus:  20000,   // paid Feb
-    p2Base:      95000,   // second earner
+    p1Base:   75000,   // your salary
+    p1Bonus:      0,   // any annual bonus
+    p2Base:   55000,   // partner's salary (set to 0 if single)
   },
-  // employer 401(k) matches (annual) — NOT income; enter the waterfall on the right
+  // employer 401(k) match (annual) — NOT income; free money on top
   match:{
-    matchPrimary: 11250,  // ~7.5% of higher-earner base
-    matchSecondary: 5700,  // ~6% of second-earner base
+    matchPrimary:   3750,  // ~5% of your salary
+    matchSecondary: 2750,  // ~5% of partner's salary
   },
-  // fixed annual contributions — standard tax-advantaged limits, constant across tiers
+  // CAPS for the investing waterfall — standard tax-advantaged limits (per household)
   contrib:{
-    k401indiv: 24500,   // per person individual 401(k) deferral
-    roth:      15000,   // backdoor Roth, 2 × $7,500
-    hsaTotal:   8750,   // family HSA total
-    hsaCompany: 1000,   // …of which the employer seeds (the rest is the household's)
-    p529:       8000,   // 529 — example state-deductible amount
+    k401indiv: 23500,   // per-person 401(k) limit
+    roth:      14000,   // 2 × $7,000 IRA / backdoor Roth
+    hsaTotal:   8550,   // family HSA limit
+    hsaCompany: 1000,   // …of which the employer seeds
+    p529:       8000,   // 529 college contribution target
   },
-  loanPaydownOur:   24000,   // $2k/mo auto-deduction (on top of family help)
-  effectiveTaxRate: 0.24,    // blended effective rate for the cash-flow waterfall
+  loanPaydownOur:   7200,    // $600/mo baseline debt payment
+  effectiveTaxRate: 0.22,    // blended effective rate for the cash-flow waterfall
 
-  // outside help (NOT income — enters the waterfall on the right)
-  familyLoanHelp: 12000,     // $1k/mo, strictly for student loans (fixed)
-  inheritance:    250000,    // example windfall, year 15
+  // outside help (NOT income — enters on the right). 0 by default.
+  familyLoanHelp: 0,         // any family help toward debt ($/yr)
+  inheritance:    100000,    // example windfall, year 15
   inheritanceYear:15,
 
   // simulation assumptions
@@ -447,7 +479,7 @@ const DATA = {
   taxRate:     0.07,
   swr:         0.04,      // 4% safe-withdrawal rule → FIRE number = yearly spend × 25
   inflation:   0.025,     // for the today's-$ / future-$ toggle (real = nominal − inflation)
-  retireSpendOpts: [150000, 250000, 400000],  // yearly retirement-spend choices
+  retireSpendOpts: [50000, 70000, 100000],  // yearly retirement-spend choices
   startAge:    28,
   endAge:      65,       // horizon used for the "net worth at 65" stat
   plotEndAge:  56,       // chart focuses on the FIRE window, not the far tail
@@ -458,40 +490,63 @@ const EXP_RETURN = DATA.alloc.stocks*DATA.ret.stocks + DATA.alloc.cash*DATA.ret.
 const PORT_VOL   = DATA.alloc.stocks*DATA.stockVol; // cash ~ riskless
 
 /* shared UI state */
-const STATE = { savings:80000, inherit:false, period:'year', rentPct:40, retireSpend:250000, combined:false, extraLoan:250,
+const STATE = { savings:30000, inherit:false, period:'year', rentPct:40, retireSpend:70000, combined:false, extraLoan:0,
                 swr:0.04, incomeGrowth:0.04, realDollars:true };
-// default: $80k tier = max the tax-advantaged accounts, anything left → loans, $0 brokerage until debt-free
 
-/* gross income = our only income (salary + bonus) */
-const GROSS    = DATA.income.p1Base + DATA.income.p1Bonus + DATA.income.p2Base;
-const TAKEHOME = Math.round(GROSS * (1 - DATA.effectiveTaxRate));   // after-tax pay
-const savingsRate = v => v / TAKEHOME;   // % of take-home; employer match excluded
+/* gross income + take-home, recomputed from the (editable) inputs */
+let GROSS, TAKEHOME;
+function recompute(){
+  GROSS    = DATA.income.p1Base + DATA.income.p1Bonus + DATA.income.p2Base;
+  TAKEHOME = Math.round(GROSS * (1 - DATA.effectiveTaxRate));
+}
+recompute();
+const savingsRate = v => TAKEHOME>0 ? v / TAKEHOME : 0;   // % of take-home; employer match excluded
 
-/* FIRE number = yearly retirement spending ÷ 4%  (= spending × 25) */
+/* FIRE number = yearly retirement spending ÷ SWR  (= spending × 1/SWR) */
 function fireNumber(){ return Math.round(STATE.retireSpend / STATE.swr); }
 
-/* one shared model: where every dollar of income goes.
-   Fixed buckets stay constant; the savings tier flexes the brokerage + living. */
+/* one shared model. The amount invested per year (STATE.savings) cascades down the
+   classic "order of operations" — each account capped at its limit:
+   1) 401(k) up to the employer match  2) HSA  3) Roth  4) rest of 401(k)
+   5) 529  6) taxable brokerage (whatever's left). Robust at any income level. */
 function moneyModel(){
   const income     = GROSS;
   const taxes      = Math.round(income * DATA.effectiveTaxRate);
-  const k401our    = DATA.contrib.k401indiv * 2;                 // $49k (us)
-  const k401match  = DATA.match.matchPrimary + DATA.match.matchSecondary;
-  const hsaCompany = DATA.contrib.hsaCompany;                    // $1k seed
-  const hsaOur     = DATA.contrib.hsaTotal - hsaCompany;         // $7.75k (us)
-  const roth       = DATA.contrib.roth;                          // $15k
-  const p529       = DATA.contrib.p529;                          // $8k
-  const fixedSavings = k401our + hsaOur + roth + p529;           // $79.75k (tax-advantaged, always invested)
-  const maxExtra   = Math.max(0, STATE.savings - fixedSavings);  // the flexible (brokerage) slice of the tier
-  const extraLoan  = Math.min(Math.max(0,STATE.extraLoan), maxExtra); // the dial: shift brokerage → faster payoff
-  const brokerage  = maxExtra - extraLoan;                       // whatever's left after the extra paydown → brokerage
-  const loanOur    = DATA.loanPaydownOur;                        // $24k ($2k/mo, automated)
-  const loanFamily = DATA.familyLoanHelp;                        // $12k (family help, $1k/mo)
-  const loanAnnual = loanOur + loanFamily + extraLoan;           // baseline $36k + whatever we choose to add
+  const invest     = Math.max(0, STATE.savings);
+
+  const matchTotal     = DATA.match.matchPrimary + DATA.match.matchSecondary;
+  const matchThreshold = matchTotal;            // assume dollar-for-dollar up to the match
+  const k401cap = DATA.contrib.k401indiv * 2;
+  const hsaCap  = DATA.contrib.hsaTotal - DATA.contrib.hsaCompany;
+  const rothCap = DATA.contrib.roth;
+  const cap529  = DATA.contrib.p529;
+
+  // the waterfall
+  let left = invest;
+  const take = c => { const t = Math.min(left, Math.max(0,c)); left -= t; return t; };
+  const k401match0 = take(matchThreshold);          // 1) capture the match
+  const hsaOur     = take(hsaCap);                   // 2) HSA
+  const roth       = take(rothCap);                  // 3) Roth
+  const k401rest   = take(k401cap - k401match0);     // 4) finish the 401(k)
+  const p529       = take(cap529);                   // 5) 529
+  const remainder  = Math.max(0, left);              // 6) → brokerage / extra debt
+  const k401our    = k401match0 + k401rest;
+  const k401match  = matchThreshold>0 ? Math.round(matchTotal * Math.min(1, k401match0/matchThreshold)) : 0;
+  const hsaCompany = hsaOur>0 ? DATA.contrib.hsaCompany : 0;
+
+  const maxExtra   = remainder;                      // only taxable overflow can be redirected to debt
+  const extraLoan  = Math.min(Math.max(0,STATE.extraLoan), maxExtra);
+  const brokerage  = remainder - extraLoan;
+
+  const loanOur    = DATA.loanPaydownOur;            // baseline debt payment (from take-home)
+  const loanFamily = DATA.familyLoanHelp;
+  const loanAnnual = loanOur + loanFamily + extraLoan;
   const r=DATA.loanRate, P=DATA.studentLoan;
-  const debtFreeYears = (loanAnnual > r*P) ? Math.log(1/(1 - r*P/loanAnnual))/Math.log(1+r) : Infinity;
-  const living     = Math.max(0, income - taxes - STATE.savings - loanOur);
-  // savings buckets (401k+HSA+Roth+529+brokerage) + extra paydown sum to exactly the tier; matches/family are extra on top
+  const debtFreeYears = (P<=0) ? 0
+                      : (loanAnnual > r*P) ? Math.log(1/(1 - r*P/loanAnnual))/Math.log(1+r)
+                      : Infinity;
+  const fixedSavings = k401our + hsaOur + roth + p529;
+  const living     = Math.max(0, income - taxes - invest - loanOur);
   return {income,taxes,k401our,k401match,hsaCompany,hsaOur,roth,p529,fixedSavings,brokerage,maxExtra,extraLoan,
           loanOur,loanFamily,loanAnnual,debtFreeYears,living};
 }
@@ -737,14 +792,14 @@ function flowSum(){
   const total    = invested + ourLoans + fam;
   const f = v => fmt$(v*per);
   const free = isFinite(m.debtFreeYears) ? '~'+m.debtFreeYears.toFixed(1)+' yrs' : 'never';
-  const brokNote = m.brokerage>0 ? 'plus '+f(m.brokerage)+' to brokerage' : '$0 to brokerage for now';
+  const brokNote = m.brokerage>0 ? f(m.brokerage)+' overflows to a taxable brokerage' : 'nothing spills into a taxable account yet';
   el.innerHTML =
     `<span class="lbl">Toward our future${unit}:</span>`+
     `<span class="big">${f(total)}</span>`+
     `<span class="part"><span class="dot" style="background:var(--flow-savings)"></span>Invested <b>${f(invested)}</b> <span style="color:var(--ink-faint)">incl. ${f(emp)} match</span></span>`+
     `<span class="part"><span class="dot" style="background:var(--flow-savings)"></span>Student loans <b>${f(ourLoans)}</b></span>`+
     `<span class="part"><span class="dot" style="background:var(--flow-family)"></span>Family <b>${f(fam)}</b></span>`+
-    `<span class="note">We max the 401ks, HSA, Roths &amp; 529s with the employer match counted in, then throw everything left at the loans — ${brokNote}, debt-free ${free}.</span>`;
+    `<span class="note">Each dollar invested fills the accounts in order — employer match first, then HSA, Roth, 401(k), 529, and only then a taxable brokerage. Here, ${brokNote}; debt gone in ${free}.</span>`;
 }
 
 /* persistent flow render — particles never stop, even when the amounts change.
@@ -1087,10 +1142,10 @@ function syncDollarButtons(){
 }
 
 document.querySelectorAll('#savings-toggle button, #savings-toggle-2 button').forEach(b=>{
-  b.onclick=()=>{ STATE.savings=+b.dataset.v; syncSavingsButtons(); drawMC(); updateFlow(); drawBudget(); };
+  b.onclick=()=>{ STATE.savings=+b.dataset.v; syncSavingsButtons(); syncMineInputs(); saveMine(); drawMC(); updateFlow(); drawBudget(); };
 });
 document.querySelectorAll('#retire-toggle button').forEach(b=>{
-  b.onclick=()=>{ STATE.retireSpend=+b.dataset.v; syncRetireButtons(); drawMC(); };
+  b.onclick=()=>{ STATE.retireSpend=+b.dataset.v; syncRetireButtons(); syncMineInputs(); saveMine(); drawMC(); };
 });
 document.querySelectorAll('#swr-toggle button').forEach(b=>{
   b.onclick=()=>{ STATE.swr=+b.dataset.s; syncSwrButtons(); drawMC(); };
@@ -1158,9 +1213,40 @@ window.addEventListener('keydown',e=>{
 /* ================================================================
    INIT + responsive redraw
    ================================================================ */
-function renderAll(){ drawMC(); drawFlow(); drawBudget(); drawSetup(); }
+function renderAll(){ recompute(); drawMC(); drawFlow(); drawBudget(); drawSetup(); }
+
+/* ---- "Make it yours": editable inputs, persisted to localStorage (device-only) ---- */
+const LS_KEY='fcc.user.v1';
+const MINE_FIELDS={
+  income1: {get:()=>DATA.income.p1Base,    set:v=>DATA.income.p1Base=v},
+  income2: {get:()=>DATA.income.p2Base,    set:v=>DATA.income.p2Base=v},
+  bonus:   {get:()=>DATA.income.p1Bonus,   set:v=>DATA.income.p1Bonus=v},
+  invest:  {get:()=>STATE.savings,         set:v=>STATE.savings=v},
+  start:   {get:()=>DATA.startInvestments, set:v=>DATA.startInvestments=v},
+  debt:    {get:()=>DATA.studentLoan,      set:v=>DATA.studentLoan=v},
+  debtrate:{get:()=>+(DATA.loanRate*100).toFixed(1), set:v=>DATA.loanRate=v/100},
+  debtpay: {get:()=>Math.round(DATA.loanPaydownOur/12), set:v=>DATA.loanPaydownOur=v*12},
+  tax:     {get:()=>Math.round(DATA.effectiveTaxRate*100), set:v=>DATA.effectiveTaxRate=v/100},
+  retire:  {get:()=>STATE.retireSpend,     set:v=>STATE.retireSpend=v},
+};
+const MINE_DEFAULTS={}; Object.keys(MINE_FIELDS).forEach(k=>MINE_DEFAULTS[k]=MINE_FIELDS[k].get());
+function saveMine(){ const o={}; Object.keys(MINE_FIELDS).forEach(k=>o[k]=MINE_FIELDS[k].get()); try{localStorage.setItem(LS_KEY,JSON.stringify(o));}catch(e){} }
+function loadMine(){ try{ const s=JSON.parse(localStorage.getItem(LS_KEY)||'null'); if(s) Object.keys(MINE_FIELDS).forEach(k=>{ if(typeof s[k]==='number'&&isFinite(s[k])) MINE_FIELDS[k].set(s[k]); }); }catch(e){} }
+function syncMineInputs(){ Object.keys(MINE_FIELDS).forEach(k=>{ const el=document.getElementById('in-'+k); if(el) el.value=MINE_FIELDS[k].get(); }); }
+function afterEdit(){ recompute(); syncSavingsButtons(); syncRetireButtons(); setSavingsRates(); saveMine(); renderAll(); }
+Object.keys(MINE_FIELDS).forEach(k=>{
+  const el=document.getElementById('in-'+k); if(!el) return;
+  el.addEventListener('input',()=>{ const v=parseFloat(el.value); if(!isFinite(v)) return; MINE_FIELDS[k].set(Math.max(0,v)); afterEdit(); });
+});
+document.getElementById('mine-reset').addEventListener('click',()=>{
+  Object.keys(MINE_FIELDS).forEach(k=>MINE_FIELDS[k].set(MINE_DEFAULTS[k]));
+  try{localStorage.removeItem(LS_KEY);}catch(e){}
+  recompute(); syncSavingsButtons(); syncRetireButtons(); setSavingsRates(); syncMineInputs(); renderAll();
+});
+
+loadMine(); recompute();
 syncSavingsButtons(); syncPeriodButtons(); syncRetireButtons(); syncCombineButtons(); setSavingsRates();
-syncSwrButtons(); syncGrowthButtons(); syncDollarButtons();
+syncSwrButtons(); syncGrowthButtons(); syncDollarButtons(); syncMineInputs();
 // defer first paint until the flex layout has resolved real dimensions,
 // otherwise the SVGs measure near-zero and draw tiny
 requestAnimationFrame(()=>requestAnimationFrame(renderAll));
