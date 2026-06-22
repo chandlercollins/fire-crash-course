@@ -130,17 +130,22 @@ h1 .accent{color:var(--accent);}
 .seg.with-rate .rate{font-size:10px;font-weight:500;opacity:.62;}
 .seg.with-rate button.on .rate{opacity:.85;}
 .cap{font-size:11px;color:var(--ink-faint);margin:2px 0 0;}
-/* "Make it yours" editable-inputs panel */
-.mine{margin:10px 0 4px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.015);max-width:760px;}
-.mine summary{cursor:pointer;list-style:none;padding:10px 14px;font-size:13px;font-weight:600;color:var(--accent);}
-.mine summary::-webkit-details-marker{display:none;}
-.mine[open] summary{border-bottom:1px solid var(--line);}
-.mine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 16px;padding:14px;}
+/* "Make it yours" — trigger button + floating modal (never reflows the scene) */
+.mine-open{display:inline-flex;align-items:center;gap:8px;margin:10px 0 2px;background:var(--panel);border:1px solid var(--line);border-radius:999px;color:var(--accent);font-size:13px;font-weight:600;padding:9px 16px;cursor:pointer;}
+.mine-open:hover{border-color:var(--accent);}
+.mine-modal{position:fixed;inset:0;z-index:90;background:rgba(4,6,10,.66);display:flex;align-items:center;justify-content:center;padding:18px;}
+.mine-modal[hidden]{display:none;}
+.mine-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:min(560px,100%);max-height:88vh;overflow:auto;padding:16px 20px 20px;box-shadow:0 30px 90px -30px rgba(0,0,0,.85);}
+.mine-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 8px;}
+.mine-card-head h2{font-size:16px;font-weight:680;margin:0;}
+.mine-x{background:transparent;border:none;color:var(--ink-faint);font-size:18px;line-height:1;cursor:pointer;padding:4px;}
+.mine-x:hover{color:var(--ink);}
+.mine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 14px;}
 .mine-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);}
-.mine-grid input{background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:14px;padding:7px 9px;font-variant-numeric:tabular-nums;width:100%;}
+.mine-grid input{background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:15px;padding:9px 10px;font-variant-numeric:tabular-nums;width:100%;}
 .mine-grid input:focus{outline:none;border-color:var(--accent);}
-.mine-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:0 14px 14px;}
-.mine-actions button{background:var(--panel);border:1px solid var(--line);color:var(--ink-soft);font-size:12.5px;padding:7px 14px;border-radius:7px;cursor:pointer;}
+.mine-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;}
+.mine-actions button{background:var(--bg);border:1px solid var(--line);color:var(--ink-soft);font-size:12.5px;padding:8px 14px;border-radius:7px;cursor:pointer;}
 .mine-actions button:hover{border-color:var(--accent);color:var(--ink);}
 .mine-note{font-size:11px;color:var(--ink-faint);}
 /* View 2 — "toward your future" running total + source breakdown */
@@ -263,25 +268,31 @@ svg{display:block;width:100%;height:100%;overflow:visible;}
     <h1>The road to <span class="accent" id="h-fire">$6.25M</span>.</h1>
     <p class="sub">A crash course in how the pieces of financial independence fit together — followed through one example household. This first view projects their investments (95% stocks, 5% cash). The white line is the most likely path; the shaded bands are the range of luck. Where it crosses the red line, work becomes optional. <b>Drag every control</b> to see what moves the date.</p>
 
-    <details class="mine" id="mine">
-      <summary>✎ Make it yours — plug in your own numbers</summary>
-      <div class="mine-grid">
-        <label>Your salary<input type="number" id="in-income1" min="0" step="1000" /></label>
-        <label>Partner salary<input type="number" id="in-income2" min="0" step="1000" /></label>
-        <label>Annual bonus<input type="number" id="in-bonus" min="0" step="1000" /></label>
-        <label>Invest / year<input type="number" id="in-invest" min="0" step="1000" /></label>
-        <label>Current investments<input type="number" id="in-start" min="0" step="1000" /></label>
-        <label>Debt balance<input type="number" id="in-debt" min="0" step="1000" /></label>
-        <label>Debt rate %<input type="number" id="in-debtrate" min="0" max="40" step="0.1" /></label>
-        <label>Debt payment / mo<input type="number" id="in-debtpay" min="0" step="50" /></label>
-        <label>Tax rate %<input type="number" id="in-tax" min="0" max="60" step="1" /></label>
-        <label>Retirement spend / yr<input type="number" id="in-retire" min="0" step="1000" /></label>
+    <button class="mine-open" id="mine-open" type="button">✎ Make it yours — plug in your own numbers</button>
+    <div class="mine-modal" id="mine-modal" hidden>
+      <div class="mine-card" role="dialog" aria-modal="true" aria-label="Enter your own numbers">
+        <div class="mine-card-head">
+          <h2>Make it yours</h2>
+          <button type="button" class="mine-x" id="mine-close" aria-label="Close">✕</button>
+        </div>
+        <div class="mine-grid">
+          <label>Your salary<input type="number" id="in-income1" min="0" step="1000" /></label>
+          <label>Partner salary<input type="number" id="in-income2" min="0" step="1000" /></label>
+          <label>Annual bonus<input type="number" id="in-bonus" min="0" step="1000" /></label>
+          <label>Invest / year<input type="number" id="in-invest" min="0" step="1000" /></label>
+          <label>Current investments<input type="number" id="in-start" min="0" step="1000" /></label>
+          <label>Debt balance<input type="number" id="in-debt" min="0" step="1000" /></label>
+          <label>Debt rate %<input type="number" id="in-debtrate" min="0" max="40" step="0.1" /></label>
+          <label>Debt payment / mo<input type="number" id="in-debtpay" min="0" step="50" /></label>
+          <label>Tax rate %<input type="number" id="in-tax" min="0" max="60" step="1" /></label>
+          <label>Retirement spend / yr<input type="number" id="in-retire" min="0" step="1000" /></label>
+        </div>
+        <div class="mine-actions">
+          <button type="button" id="mine-reset">Reset to example</button>
+          <span class="mine-note">Saved in your browser only — nothing leaves your device.</span>
+        </div>
       </div>
-      <div class="mine-actions">
-        <button type="button" id="mine-reset">Reset to example</button>
-        <span class="mine-note">Saved in your browser only — nothing leaves your device.</span>
-      </div>
-    </details>
+    </div>
 
     <div class="controls">
       <span class="seg-label">Invest / yr</span>
@@ -1243,6 +1254,14 @@ document.getElementById('mine-reset').addEventListener('click',()=>{
   try{localStorage.removeItem(LS_KEY);}catch(e){}
   recompute(); syncSavingsButtons(); syncRetireButtons(); setSavingsRates(); syncMineInputs(); renderAll();
 });
+/* open/close the floating modal — never reflows the scene, so the chart stays put */
+const mineModal=document.getElementById('mine-modal');
+function openMine(){ syncMineInputs(); mineModal.hidden=false; }
+function closeMine(){ mineModal.hidden=true; }
+document.getElementById('mine-open').addEventListener('click',openMine);
+document.getElementById('mine-close').addEventListener('click',closeMine);
+mineModal.addEventListener('click',e=>{ if(e.target===mineModal) closeMine(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !mineModal.hidden) closeMine(); });
 
 loadMine(); recompute();
 syncSavingsButtons(); syncPeriodButtons(); syncRetireButtons(); syncCombineButtons(); setSavingsRates();
