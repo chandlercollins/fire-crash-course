@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FIRE Crash Course — how financial independence actually fits together</title>
+<meta name="description" content="An interactive crash course in financial independence: watch how saving, debt, taxes, and time compound into freedom — with a worked example you can explore." />
+<meta property="og:title" content="FIRE Crash Course" />
+<meta property="og:description" content="How saving, debt, taxes, and time compound into financial independence — an interactive, visual crash course." />
+<meta property="og:type" content="website" />
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+/* ============================================================
+   TUFTE-INSPIRED DARK DASHBOARD
+   minimal ink, purposeful color, clean type
+   ============================================================ */
+:root{
+  --bg:        #0a0c10;
+  --bg-soft:   #0f1318;
+  --panel:     #12161d;
+  --ink:       #e8ebf0;
+  --ink-soft:  #98a2b3;
+  --ink-faint: #5b6573;
+  --line:      #1d232c;
+  --grid:      #1a1f27;
+
+  /* purposeful color */
+  --green:     #34d399;   /* 25-75 band */
+  --green-dk:  #0f6e4d;
+  --amber:     #fbbf24;   /* 10-90 band */
+  --amber-dk:  #7a5610;
+  --median:    #e8ebf0;
+  --fire:      #ef4444;   /* fire target */
+
+  /* energy flow colors */
+  --flow-savings:  #34d399;   /* income & our savings */
+  --flow-match:    #60a5fa;   /* company match */
+  --flow-family:   #c084fc;   /* family help */
+  --flow-tax:      #f87171;   /* taxes */
+  --flow-live:     #fbbf24;   /* to everyday budget */
+  --flow-pipe:     #1c2530;
+
+  --accent:    #34d399;
+  font-feature-settings:"tnum" 1, "lnum" 1;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ---------- scroll-snap scaffold ---------- */
+#scroller{
+  height:100vh;
+  overflow-y:scroll;
+  scroll-snap-type:y mandatory;
+  scrollbar-width:none;
+}
+#scroller::-webkit-scrollbar{display:none;}
+.scene{
+  height:100vh;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  padding:clamp(28px,5vh,64px) clamp(24px,6vw,96px);
+  overflow:hidden;
+}
+
+/* ---------- typography ---------- */
+.eyebrow{
+  font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; margin-bottom:10px;
+}
+h1{font-size:clamp(28px,4vw,46px); font-weight:680; letter-spacing:-.02em; line-height:1.05;}
+h1 .accent{color:var(--accent);}
+.sub{color:var(--ink-soft); font-size:clamp(14px,1.4vw,17px); margin-top:10px; max-width:60ch; line-height:1.5;}
+.mono{font-variant-numeric:tabular-nums;}
+
+/* ---------- nav dots ---------- */
+#dots{
+  position:fixed; right:26px; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:18px; z-index:50;
+}
+#dots button{
+  width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink-faint);
+  background:transparent; cursor:pointer; padding:0; transition:all .3s ease;
+  position:relative;
+}
+#dots button.active{background:var(--accent);border-color:var(--accent);transform:scale(1.25);}
+#dots button::after{
+  content:attr(data-label);
+  position:absolute; right:20px; top:50%; transform:translateY(-50%);
+  font-size:11px; letter-spacing:.04em; color:var(--ink-soft); white-space:nowrap;
+  opacity:0; transition:opacity .25s; pointer-events:none;
+}
+#dots button:hover::after{opacity:1;}
+
+/* ---------- scroll hint ---------- */
+.hint{
+  position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+  font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint);
+  display:flex;align-items:center;gap:8px; animation:bob 2.4s ease-in-out infinite;
+}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(6px);}}
+
+/* ---------- toggles ---------- */
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:18px 0 6px;}
+.seg{
+  display:inline-flex; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:3px; gap:2px;
+}
+.seg button{
+  background:transparent;border:none;color:var(--ink-soft);
+  font-size:13px;font-weight:560;padding:7px 15px;border-radius:7px;cursor:pointer;
+  transition:all .2s ease; font-variant-numeric:tabular-nums;
+}
+.seg button.on{background:var(--accent);color:#04140d;}
+.seg button:not(.on):hover{color:var(--ink);}
+.seg-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-right:4px;}
+/* toggle buttons that show a savings-rate sub-label */
+.seg.with-rate button{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.05;padding:5px 14px;}
+.seg.with-rate .amt{font-size:13px;font-weight:620;}
+.seg.with-rate .rate{font-size:10px;font-weight:500;opacity:.62;}
+.seg.with-rate button.on .rate{opacity:.85;}
+.cap{font-size:11px;color:var(--ink-faint);margin:2px 0 0;}
+/* View 2 — "toward your future" running total + source breakdown */
+.flow-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin:8px 0 2px;font-size:12.5px;color:var(--ink-soft);line-height:1.45;}
+.flow-sum .lbl{color:var(--ink-faint);letter-spacing:.01em;}
+.flow-sum .big{font-size:19px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;}
+.flow-sum .part{display:inline-flex;align-items:baseline;gap:6px;}
+.flow-sum .part b{color:var(--ink);font-weight:660;font-variant-numeric:tabular-nums;}
+.flow-sum .dot{display:inline-block;width:8px;height:8px;border-radius:2px;align-self:center;}
+.flow-sum .note{flex-basis:100%;font-size:11px;color:var(--ink-faint);margin-top:1px;}
+.flow-sum .note b{color:var(--ink-soft);font-weight:600;}
+/* View 1 — the 4% rule explainer */
+.fire-math{font-size:12.5px;color:var(--ink-soft);margin:8px 0 2px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;line-height:1.4;}
+.fire-math .fm-rule{color:var(--accent);font-weight:680;}
+.fire-math b{color:var(--ink);font-weight:660;}
+.fire-math .fm-eq{font-variant-numeric:tabular-nums;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 11px;}
+.fire-math .fm-eq b.tgt{color:var(--fire);}
+/* rent danger-zone cue */
+.rent-zone{font-size:12.5px;font-weight:620;margin-left:2px;}
+
+.switch{
+  display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-soft);cursor:pointer;
+  user-select:none;
+}
+.switch .track{
+  width:42px;height:23px;border-radius:12px;background:var(--panel);border:1px solid var(--line);
+  position:relative;transition:background .25s;
+}
+.switch .knob{
+  position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+  background:var(--ink-faint);transition:all .25s;
+}
+.switch.on .track{background:var(--amber-dk);border-color:var(--amber);}
+.switch.on .knob{left:21px;background:var(--amber);}
+
+/* ---------- chart area ---------- */
+.chart-wrap{flex:1;min-height:0;position:relative;margin-top:8px;}
+svg{display:block;width:100%;height:100%;overflow:visible;}
+.axis text{fill:var(--ink-faint);font-size:11px;}
+.axis path,.axis line{stroke:var(--grid);}
+.axis .domain{display:none;}
+.gridline{stroke:var(--grid);stroke-width:1;}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:12px;color:var(--ink-soft);margin-top:6px;}
+.legend .chip{display:inline-flex;align-items:center;gap:7px;}
+.legend .swatch{width:14px;height:10px;border-radius:2px;}
+.legend .swline{width:18px;height:0;border-top:2px solid;}
+
+/* readout cards */
+.readout{display:flex;gap:34px;flex-wrap:wrap;margin-top:14px;}
+.stat .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+.stat .v{font-size:clamp(20px,2.4vw,30px);font-weight:660;letter-spacing:-.01em;margin-top:2px;}
+.stat .v small{font-size:14px;color:var(--ink-soft);font-weight:500;}
+.stat .v small.dim{font-size:11.5px;color:var(--ink-faint);opacity:.8;font-weight:450;}
+
+/* ---------- flow view ---------- */
+.flow-stage{flex:1;min-height:0;position:relative;}
+.node-label{font-size:12px;fill:var(--ink);font-weight:560;}
+.node-sub{font-size:10.5px;fill:var(--ink-faint);}
+.node-box{fill:var(--panel);stroke:var(--line);}
+
+/* ---------- budget ---------- */
+.budget-grid{flex:1;min-height:0;display:flex;flex-direction:column;gap:2px;margin-top:10px;}
+.brow{display:grid;grid-template-columns:200px 1fr 120px;align-items:center;gap:16px;padding:7px 0;border-bottom:1px solid var(--line);}
+.brow .blabel{font-size:13.5px;color:var(--ink);}
+.brow .blabel small{display:block;color:var(--ink-faint);font-size:11px;}
+.bbar-track{height:22px;background:var(--bg-soft);border-radius:4px;overflow:hidden;position:relative;}
+.bbar{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.brow .bval{text-align:right;font-variant-numeric:tabular-nums;font-size:14px;font-weight:560;}
+.brow .bval small{color:var(--ink-faint);font-weight:400;}
+.rent-control{display:flex;align-items:center;gap:14px;margin:6px 0 2px;}
+.rent-control input[type=range]{flex:0 0 320px;width:320px;-webkit-appearance:none;height:5px;border-radius:3px;outline:none;
+  background:linear-gradient(90deg,var(--green) 0%,var(--green) 50%,var(--amber) 58%,var(--fire) 66%,var(--fire) 100%);}
+.rent-control input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg);box-shadow:0 0 0 1px var(--accent);}
+.rent-control input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg);}
+.rent-badge{font-size:13px;color:var(--ink-soft);}
+.rent-badge b{color:var(--accent);font-size:16px;}
+/* View 2 — extra-to-loans dial (prioritise debt-free vs brokerage) */
+.loan-control{display:flex;align-items:center;gap:14px;margin:10px 0 2px;flex-wrap:wrap;}
+.loan-control input[type=range]{flex:0 0 300px;width:300px;-webkit-appearance:none;height:5px;border-radius:3px;outline:none;
+  background:linear-gradient(90deg,#1d2a24 0%,var(--flow-savings) 100%);}
+.loan-control input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--flow-savings);cursor:pointer;border:3px solid var(--bg);box-shadow:0 0 0 1px var(--flow-savings);}
+.loan-control input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--flow-savings);cursor:pointer;border:3px solid var(--bg);}
+.loan-control .loan-badge{font-size:12.5px;color:var(--ink-soft);}
+.loan-control .loan-badge b{color:var(--ink);font-weight:660;font-variant-numeric:tabular-nums;}
+.loan-control .loan-badge b.free{color:var(--flow-savings);}
+
+/* ---------- setup / automation blueprint (View 4) ---------- */
+.setup-stage{flex:1;min-height:0;position:relative;}
+@keyframes march{ to { stroke-dashoffset:-18; } }
+.wire-bg{fill:none;stroke:var(--flow-pipe);stroke-linecap:round;}
+.wire{fill:none;stroke-dasharray:3 5;stroke-linecap:round;animation:march 1s linear infinite;}
+.wire.future{stroke-dasharray:2 6;animation-duration:1.8s;opacity:.55;}
+.snode-title{font-size:11px;fill:var(--ink);font-weight:600;}
+.snode-sub{font-size:9px;fill:var(--ink-faint);}
+.col-head{font-size:9.5px;fill:var(--ink-faint);letter-spacing:.13em;text-transform:uppercase;}
+.cad{font-size:8.5px;fill:var(--ink-soft);}
+
+.tip{position:fixed;pointer-events:none;background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--ink);opacity:0;transition:opacity .12s;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+.tip .th{color:var(--ink-faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;}
+.tip .tv{font-weight:640;font-size:15px;margin-top:2px;}
+
+@media (max-width:720px){
+  .brow{grid-template-columns:120px 1fr 84px;gap:8px;}
+  #dots{right:10px;}
+}
+</style>
+</head>
+<body>
+
+<div id="dots"></div>
+<div class="tip" id="tip"></div>
+
+<div id="scroller">
+
+  <!-- ============ SCENE 1 : FUTURE VISION ============ -->
+  <section class="scene" id="scene-vision">
+    <div class="eyebrow">View 1 — The Future Vision</div>
+    <h1>The road to <span class="accent" id="h-fire">$6.25M</span>.</h1>
+    <p class="sub">A crash course in how the pieces of financial independence fit together — followed through one example household. This first view projects their investments (95% stocks, 5% cash). The white line is the most likely path; the shaded bands are the range of luck. Where it crosses the red line, work becomes optional. <b>Drag every control</b> to see what moves the date.</p>
+
+    <div class="controls">
+      <span class="seg-label">Invest / yr</span>
+      <div class="seg with-rate" id="savings-toggle">
+        <button data-v="80000" class="on"><span class="amt">$80k</span><span class="rate"></span></button>
+        <button data-v="100000"><span class="amt">$100k</span><span class="rate"></span></button>
+        <button data-v="120000"><span class="amt">$120k</span><span class="rate"></span></button>
+        <button data-v="140000"><span class="amt">$140k</span><span class="rate"></span></button>
+      </div>
+      <span class="seg-label" style="margin-left:6px">Spend / yr in retirement</span>
+      <div class="seg" id="retire-toggle">
+        <button data-v="150000">$150k</button>
+        <button data-v="250000" class="on">$250k</button>
+        <button data-v="400000">$400k</button>
+      </div>
+      <span class="seg-label" style="margin-left:6px">Withdraw</span>
+      <div class="seg" id="swr-toggle">
+        <button data-s="0.04" class="on">4%</button>
+        <button data-s="0.035">3.5%</button>
+      </div>
+      <span class="seg-label" style="margin-left:6px">Pay growth</span>
+      <div class="seg" id="growth-toggle">
+        <button data-g="0.01">1%</button>
+        <button data-g="0.04" class="on">4%</button>
+        <button data-g="0.07">7%</button>
+      </div>
+      <span class="seg-label" style="margin-left:6px">Show in</span>
+      <div class="seg" id="dollar-toggle">
+        <button data-r="1" class="on">Today's $</button>
+        <button data-r="0">Future $</button>
+      </div>
+      <div class="switch" id="inherit-toggle" role="switch" aria-checked="false">
+        <span class="track"><span class="knob"></span></span>
+        <span>$250k windfall at Year 15</span>
+      </div>
+    </div>
+    <div class="fire-math">
+      <span><span class="fm-rule" id="fm-rule">The 4% rule:</span> you can retire once investments reach <b id="fm-mult">25×</b> your yearly spending — <b id="fm-rate">4%</b> a year covers your costs without ever running out.</span>
+      <span class="fm-eq"><b id="fm-spend">$250k</b>/yr spending &nbsp;×&nbsp; <b id="fm-mult2">25</b> &nbsp;=&nbsp; <b class="tgt" id="fm-target">$6.25M</b> needed</span>
+    </div>
+    <div class="cap">Invest % = share of take-home pay saved (employer match not counted). <b>Today's $</b> shows everything in today's spending power (the honest yardstick); <b>Future $</b> shows the bigger nominal numbers. Excludes Social Security — a real cushion not counted here, so the picture is conservative.</div>
+
+    <div class="legend">
+      <span class="chip"><span class="swatch" style="background:var(--median)"></span>Most likely path</span>
+      <span class="chip"><span class="swatch" style="background:linear-gradient(90deg,var(--green),var(--green-dk))"></span>likely range</span>
+      <span class="chip"><span class="swatch" style="background:linear-gradient(90deg,var(--amber),var(--amber-dk))"></span>lucky / unlucky range</span>
+      <span class="chip"><span class="swline" style="border-color:var(--fire)"></span>FIRE number <span id="leg-fire">$6.25M</span></span>
+    </div>
+
+    <div class="chart-wrap"><svg id="mc-chart"></svg></div>
+
+    <div class="readout">
+      <div class="stat"><div class="k">Debt-free in</div><div class="v" id="r-debt">—</div></div>
+      <div class="stat"><div class="k">Median FIRE date</div><div class="v" id="r-years">—</div></div>
+      <div class="stat"><div class="k">Median net worth at 65</div><div class="v" id="r-terminal">—</div></div>
+      <div class="stat"><div class="k">Savings rate</div><div class="v" id="r-save">—</div></div>
+    </div>
+    <div class="hint">Scroll ↓ &nbsp;·&nbsp; the flow of money</div>
+  </section>
+
+  <!-- ============ SCENE 2 : FLOW OF MONEY ============ -->
+  <section class="scene" id="scene-flow" style="background:radial-gradient(120% 90% at 50% 0%,#0d1118 0%,var(--bg) 60%);">
+    <div class="eyebrow">View 2 — The Flow of Money</div>
+    <h1>Every dollar has <span class="accent">a job.</span></h1>
+    <p class="sub">Salary and bonus enter from the left — the household's only income. Employer matches and family help join from the right, since they aren't income. Everything cascades down in strict priority order, top to bottom — this is the heart of any plan: <b>give every dollar a job.</b></p>
+
+    <div class="controls">
+      <span class="seg-label">View</span>
+      <div class="seg" id="period-toggle">
+        <button data-p="month">Monthly</button>
+        <button data-p="year" class="on">Yearly</button>
+      </div>
+      <span class="seg-label" style="margin-left:8px">Savings tier</span>
+      <div class="seg with-rate" id="savings-toggle-2">
+        <button data-v="80000" class="on"><span class="amt">$80k</span><span class="rate"></span></button>
+        <button data-v="100000"><span class="amt">$100k</span><span class="rate"></span></button>
+        <button data-v="120000"><span class="amt">$120k</span><span class="rate"></span></button>
+        <button data-v="140000"><span class="amt">$140k</span><span class="rate"></span></button>
+      </div>
+      <div class="legend" style="margin-left:6px">
+        <span class="chip"><span class="swatch" style="background:var(--flow-savings)"></span>Income &amp; savings</span>
+        <span class="chip"><span class="swatch" style="background:var(--flow-match)"></span>Company match</span>
+        <span class="chip"><span class="swatch" style="background:var(--flow-family)"></span>Family help</span>
+        <span class="chip"><span class="swatch" style="background:var(--flow-tax)"></span>Taxes</span>
+        <span class="chip"><span class="swatch" style="background:var(--flow-live)"></span>To budget</span>
+      </div>
+    </div>
+
+    <div class="loan-control">
+      <span class="seg-label" style="margin:0">Prioritise</span>
+      <span class="loan-badge" style="color:var(--ink-faint)">Brokerage</span>
+      <input type="range" id="loan-slider" min="0" max="40250" value="0" step="250" aria-label="Extra annual student-loan paydown" />
+      <span class="loan-badge" style="color:var(--ink-faint)">Debt-free</span>
+      <span class="loan-badge" id="loan-badge"></span>
+    </div>
+    <div class="flow-sum" id="flow-sum"></div>
+    <div class="flow-stage"><svg id="flow-chart"></svg></div>
+    <div class="hint">Scroll ↓ &nbsp;·&nbsp; the reality</div>
+  </section>
+
+  <!-- ============ SCENE 3 : BUDGET REALITY ============ -->
+  <section class="scene" id="scene-budget">
+    <div class="eyebrow">View 3 — The Reality</div>
+    <h1>What's <span class="accent">left to live on.</span></h1>
+    <p class="sub">After taxes and aggressive investing, what's left lands here — split by a realistic spending mix. Drag the rent slider to feel the trade-off; the savings tier you pick in Views 1–2 sets the size of this pot. The lesson: <b>housing is the lever that quietly decides everything else.</b></p>
+
+    <div class="controls">
+      <span class="seg-label">View</span>
+      <div class="seg" id="period-toggle-b">
+        <button data-p="month" class="on">Monthly</button>
+        <button data-p="year">Yearly</button>
+      </div>
+      <span class="rent-badge" style="margin-left:6px">Leftover to live on: <b id="bud-total">—</b></span>
+    </div>
+
+    <div class="rent-control">
+      <input type="range" id="rent-slider" min="25" max="60" value="40" step="5" />
+      <span class="rent-badge">Rent / Housing <b id="rent-pct">40%</b> · <span class="rent-zone" id="rent-zone"></span></span>
+    </div>
+
+    <div class="budget-grid" id="budget-grid"></div>
+    <div class="hint">Scroll ↓ &nbsp;·&nbsp; the setup</div>
+  </section>
+
+  <!-- ============ SCENE 4 : THE SETUP ============ -->
+  <section class="scene" id="scene-setup" style="background:radial-gradient(120% 90% at 50% 0%,#0d1118 0%,var(--bg) 60%);">
+    <div class="eyebrow">View 4 — The Setup</div>
+    <h1>Set it once, then <span class="accent">stay carefree.</span></h1>
+    <p class="sub">How the <b id="setup-tier" style="color:var(--ink);font-weight:620">$120k</b> actually happens. The big rocks auto-deduct inside each payroll system; net pay lands in checking; then automatic transfers fund the rest. The magic: <b>once it's wired up, the plan runs itself</b> — you just keep an eye on rent.</p>
+    <div class="cap" style="margin:0 0 4px"><b style="color:var(--flow-savings)">Foundation first:</b> before any of this, always keep <b style="color:var(--ink)">3–6 months</b> of expenses in a high-yield savings account — a safety net, so you never have to sell investments in a pinch.</div>
+
+    <div class="controls">
+      <span class="seg-label">Accounts</span>
+      <div class="seg" id="combine-toggle">
+        <button data-c="separate" class="on">Separate (today)</button>
+        <button data-c="combined">Combined</button>
+      </div>
+      <div class="legend" style="margin-left:6px">
+        <span class="chip"><span class="swatch" style="background:var(--flow-savings)"></span>Our paychecks</span>
+        <span class="chip"><span class="swatch" style="background:var(--flow-match)"></span>Employer adds</span>
+        <span class="chip"><span class="swatch" style="background:var(--flow-family)"></span>Family</span>
+        <span class="chip"><span class="swatch" style="background:var(--flow-live)"></span>To brokerage</span>
+      </div>
+    </div>
+
+    <div class="setup-stage"><svg id="setup-chart"></svg></div>
+    <div class="hint" style="bottom:18px">↑ scroll up &nbsp;·&nbsp; ← → arrows navigate</div>
+  </section>
+
+</div>
+
+<script>
+/* ================================================================
+   CORE DATA & ASSUMPTIONS  —  edit freely
+   ================================================================ */
+const DATA = {
+  people:{ p1:{age:32}, p2:{age:30} },   // example two-income household
+
+  // balance sheet  — ILLUSTRATIVE EXAMPLE NUMBERS, not anyone's real data
+  startInvestments: 250000,
+  studentLoan:       60000,
+  loanRate:         0.06,
+
+  // income (annual) — example two-earner household
+  income:{
+    p1Base:  150000,   // higher earner, base
+    p1Bonus:  20000,   // paid Feb
+    p2Base:      95000,   // second earner
+  },
+  // employer 401(k) matches (annual) — NOT income; enter the waterfall on the right
+  match:{
+    matchPrimary: 11250,  // ~7.5% of higher-earner base
+    matchSecondary: 5700,  // ~6% of second-earner base
+  },
+  // fixed annual contributions — standard tax-advantaged limits, constant across tiers
+  contrib:{
+    k401indiv: 24500,   // per person individual 401(k) deferral
+    roth:      15000,   // backdoor Roth, 2 × $7,500
+    hsaTotal:   8750,   // family HSA total
+    hsaCompany: 1000,   // …of which the employer seeds (the rest is the household's)
+    p529:       8000,   // 529 — example state-deductible amount
+  },
+  loanPaydownOur:   24000,   // $2k/mo auto-deduction (on top of family help)
+  effectiveTaxRate: 0.24,    // blended effective rate for the cash-flow waterfall
+
+  // outside help (NOT income — enters the waterfall on the right)
+  familyLoanHelp: 12000,     // $1k/mo, strictly for student loans (fixed)
+  inheritance:    250000,    // example windfall, year 15
+  inheritanceYear:15,
+
+  // simulation assumptions
+  alloc:{ stocks:0.95, bonds:0.00, cash:0.05 },
+  ret:{ stocks:0.081, cash:0.024 },
+  stockVol:    0.12,      // annual std dev of equity returns
+  incomeGrowth:0.01,
+  taxRate:     0.07,
+  swr:         0.04,      // 4% safe-withdrawal rule → FIRE number = yearly spend × 25
+  inflation:   0.025,     // for the today's-$ / future-$ toggle (real = nominal − inflation)
+  retireSpendOpts: [150000, 250000, 400000],  // yearly retirement-spend choices
+  startAge:    28,
+  endAge:      65,       // horizon used for the "net worth at 65" stat
+  plotEndAge:  56,       // chart focuses on the FIRE window, not the far tail
+};
+
+// blended expected return & vol
+const EXP_RETURN = DATA.alloc.stocks*DATA.ret.stocks + DATA.alloc.cash*DATA.ret.cash;
+const PORT_VOL   = DATA.alloc.stocks*DATA.stockVol; // cash ~ riskless
+
+/* shared UI state */
+const STATE = { savings:80000, inherit:false, period:'year', rentPct:40, retireSpend:250000, combined:false, extraLoan:250,
+                swr:0.04, incomeGrowth:0.04, realDollars:true };
+// default: $80k tier = max the tax-advantaged accounts, anything left → loans, $0 brokerage until debt-free
+
+/* gross income = our only income (salary + bonus) */
+const GROSS    = DATA.income.p1Base + DATA.income.p1Bonus + DATA.income.p2Base;
+const TAKEHOME = Math.round(GROSS * (1 - DATA.effectiveTaxRate));   // after-tax pay
+const savingsRate = v => v / TAKEHOME;   // % of take-home; employer match excluded
+
+/* FIRE number = yearly retirement spending ÷ 4%  (= spending × 25) */
+function fireNumber(){ return Math.round(STATE.retireSpend / STATE.swr); }
+
+/* one shared model: where every dollar of income goes.
+   Fixed buckets stay constant; the savings tier flexes the brokerage + living. */
+function moneyModel(){
+  const income     = GROSS;
+  const taxes      = Math.round(income * DATA.effectiveTaxRate);
+  const k401our    = DATA.contrib.k401indiv * 2;                 // $49k (us)
+  const k401match  = DATA.match.matchPrimary + DATA.match.matchSecondary;
+  const hsaCompany = DATA.contrib.hsaCompany;                    // $1k seed
+  const hsaOur     = DATA.contrib.hsaTotal - hsaCompany;         // $7.75k (us)
+  const roth       = DATA.contrib.roth;                          // $15k
+  const p529       = DATA.contrib.p529;                          // $8k
+  const fixedSavings = k401our + hsaOur + roth + p529;           // $79.75k (tax-advantaged, always invested)
+  const maxExtra   = Math.max(0, STATE.savings - fixedSavings);  // the flexible (brokerage) slice of the tier
+  const extraLoan  = Math.min(Math.max(0,STATE.extraLoan), maxExtra); // the dial: shift brokerage → faster payoff
+  const brokerage  = maxExtra - extraLoan;                       // whatever's left after the extra paydown → brokerage
+  const loanOur    = DATA.loanPaydownOur;                        // $24k ($2k/mo, automated)
+  const loanFamily = DATA.familyLoanHelp;                        // $12k (family help, $1k/mo)
+  const loanAnnual = loanOur + loanFamily + extraLoan;           // baseline $36k + whatever we choose to add
+  const r=DATA.loanRate, P=DATA.studentLoan;
+  const debtFreeYears = (loanAnnual > r*P) ? Math.log(1/(1 - r*P/loanAnnual))/Math.log(1+r) : Infinity;
+  const living     = Math.max(0, income - taxes - STATE.savings - loanOur);
+  // savings buckets (401k+HSA+Roth+529+brokerage) + extra paydown sum to exactly the tier; matches/family are extra on top
+  return {income,taxes,k401our,k401match,hsaCompany,hsaOur,roth,p529,fixedSavings,brokerage,maxExtra,extraLoan,
+          loanOur,loanFamily,loanAnnual,debtFreeYears,living};
+}
+
+/* ================================================================
+   helpers
+   ================================================================ */
+const fmt$   = d3.format("$,.0f");
+const fmtM   = v => { let m=v/1e6, s=(m>=10?m.toFixed(1):m.toFixed(2)).replace(/\.?0+$/,''); return "$"+s+"M"; };
+const fmtK   = v => "$"+Math.round(v/1000)+"k";
+const tip = document.getElementById('tip');
+function showTip(html,x,y){ tip.innerHTML=html; tip.style.opacity=1; tip.style.left=(x+14)+'px'; tip.style.top=(y+14)+'px'; }
+function hideTip(){ tip.style.opacity=0; }
+
+// seeded RNG for stable bands
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(rng){ // box-muller
+  let u=0,v=0; while(u===0)u=rng(); while(v===0)v=rng();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+/* ================================================================
+   VIEW 1 — MONTE CARLO
+   ================================================================ */
+function runSim(){
+  const N = 1200;
+  const years = DATA.endAge - DATA.startAge;
+  const rng = mulberry32(20260619);              // deterministic
+  const mm = moneyModel();
+  const dFree = mm.debtFreeYears;                 // extra paydown shortens this
+  const extra = mm.extraLoan;                     // diverted from the market while the debt is alive
+  const paths = [];
+
+  for(let s=0;s<N;s++){
+    let bal = DATA.startInvestments;
+    let save = STATE.savings;
+    const row=[bal];
+    for(let y=1;y<=years;y++){
+      const r = EXP_RETURN + PORT_VOL*gauss(rng);
+      const invest = (y<=dFree) ? save - extra : save;   // until debt-free, the extra pays loans instead of compounding
+      bal = bal*(1+r) + Math.max(0,invest);
+      if(STATE.inherit && y===DATA.inheritanceYear) bal += DATA.inheritance;
+      save *= (1+STATE.incomeGrowth);
+      row.push(bal);
+    }
+    paths.push(row);
+  }
+
+  // percentiles per year
+  const pct=(arr,p)=>{const a=[...arr].sort((x,y)=>x-y);const i=(a.length-1)*p;const lo=Math.floor(i),hi=Math.ceil(i);return a[lo]+(a[hi]-a[lo])*(i-lo);};
+  const out=[];
+  for(let y=0;y<=years;y++){
+    const col=paths.map(p=>p[y]);
+    out.push({ year:y, age:DATA.startAge+y,
+      p10:pct(col,.10), p25:pct(col,.25), p50:pct(col,.50), p75:pct(col,.75), p90:pct(col,.90) });
+  }
+  return out;
+}
+
+// fractional year where a percentile path first crosses the fire number,
+// always judged in REAL (today's $) terms so the FIRE date is honest in either display mode
+function crossReal(full, key){
+  const target=fireNumber(), infl=DATA.inflation;
+  const realAt=d=>d[key]/Math.pow(1+infl,d.year);
+  for(let i=1;i<full.length;i++){
+    if(realAt(full[i])>=target){
+      const a=realAt(full[i-1]),b=realAt(full[i]);
+      return full[i-1].year+(target-a)/(b-a);
+    }
+  }
+  return null;
+}
+
+function drawMC(){
+  const target = fireNumber();
+  const mm = moneyModel();
+  const full = runSim();                         // nominal paths
+  const plotN = DATA.plotEndAge - DATA.startAge;
+  const infl=DATA.inflation, real=STATE.realDollars;
+  const defl = yr => real ? 1/Math.pow(1+infl,yr) : 1;          // nominal → displayed dollars
+  const tgtAt= yr => real ? target : target*Math.pow(1+infl,yr); // displayed FIRE line (rises in future-$)
+  // displayed series (deflated to today's $ when real, else nominal as-is)
+  const series = full.slice(0, plotN+1).map(d=>({ year:d.year, age:d.age,
+    p10:d.p10*defl(d.year), p25:d.p25*defl(d.year), p50:d.p50*defl(d.year),
+    p75:d.p75*defl(d.year), p90:d.p90*defl(d.year) }));
+
+  const svg=d3.select("#mc-chart"); svg.selectAll("*").remove();
+  const box=svg.node().parentNode.getBoundingClientRect();
+  const W=box.width,H=box.height;
+  const m={top:16,right:64,bottom:30,left:18};
+  const iw=W-m.left-m.right, ih=H-m.top-m.bottom;
+
+  // clip so the wide upper band never spills past the plot frame
+  svg.append("clipPath").attr("id","mc-clip").append("rect")
+     .attr("x",0).attr("y",0).attr("width",iw).attr("height",ih);
+  const g=svg.append("g").attr("transform",`translate(${m.left},${m.top})`);
+
+  const x=d3.scaleLinear().domain([0,plotN]).range([0,iw]);
+  const maxY=Math.max(d3.max(series,d=>d.p75), tgtAt(plotN), target);
+  const y=d3.scaleLinear().domain([DATA.startInvestments*0.5,maxY]).range([ih,0]).nice();
+
+  // gridlines
+  g.append("g").attr("class","grid")
+    .selectAll("line").data(y.ticks(6)).join("line")
+    .attr("class","gridline").attr("x1",0).attr("x2",iw)
+    .attr("y1",d=>y(d)).attr("y2",d=>y(d));
+
+  // bands + median, clipped to the plot frame
+  const clip=g.append("g").attr("clip-path","url(#mc-clip)");
+  const area=(lo,hi)=>d3.area().x(d=>x(d.year)).y0(d=>y(d[lo])).y1(d=>y(d[hi])).curve(d3.curveMonotoneX);
+  clip.append("path").datum(series).attr("d",area("p10","p90")).attr("fill","var(--amber)").attr("opacity",.16);
+  clip.append("path").datum(series).attr("d",area("p25","p75")).attr("fill","var(--green)").attr("opacity",.22);
+
+  // median
+  const line=d3.line().x(d=>x(d.year)).y(d=>y(d.p50)).curve(d3.curveMonotoneX);
+  clip.append("path").datum(series).attr("d",line)
+    .attr("fill","none").attr("stroke","var(--median)").attr("stroke-width",2.4);
+
+  // fire target line (flat in today's $, gently rising in future $)
+  const tline=d3.line().x(d=>x(d.year)).y(d=>y(tgtAt(d.year)));
+  g.append("path").datum(series).attr("d",tline).attr("fill","none")
+    .attr("stroke","var(--fire)").attr("stroke-width",1.5).attr("stroke-dasharray","6 5");
+  g.append("text").attr("x",iw).attr("y",y(tgtAt(plotN))-8).attr("text-anchor","end")
+    .attr("fill","var(--fire)").attr("font-size",12).attr("font-weight",600)
+    .text("FIRE  "+fmtM(target)+(real?"":" (today's $)"));
+
+  // axes
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`)
+    .call(d3.axisBottom(x).ticks(8).tickFormat(d=>"Age "+(DATA.startAge+d)));
+  g.append("g").attr("class","axis").attr("transform",`translate(${iw},0)`)
+    .call(d3.axisRight(y).ticks(6).tickFormat(d=>"$"+d3.format(".1f")(d/1e6)+"M"));
+
+  // FIRE crossing (real terms → same honest date in either display mode)
+  const cy=crossReal(full,'p50');
+  const cyLo=crossReal(full,'p25');   // a rougher-market case, shown subtly
+  if(cy!==null && cy<=plotN){
+    const cx=x(cy), cyY=y(tgtAt(cy));
+    g.append("line").attr("x1",cx).attr("x2",cx).attr("y1",cyY).attr("y2",ih)
+      .attr("stroke","var(--fire)").attr("stroke-width",1).attr("stroke-dasharray","2 4").attr("opacity",.6);
+    g.append("circle").attr("cx",cx).attr("cy",cyY).attr("r",6)
+      .attr("fill","var(--fire)").attr("stroke","var(--bg)").attr("stroke-width",2);
+    g.append("text").attr("x",cx).attr("y",ih-6).attr("text-anchor","middle")
+      .attr("fill","var(--ink)").attr("font-size",12).attr("font-weight",600)
+      .text(cy.toFixed(1)+" yrs · age "+Math.floor(DATA.startAge+cy));
+  }
+
+  // debt-free milestone marker
+  const dFree=mm.debtFreeYears;
+  if(isFinite(dFree) && dFree>0 && dFree<plotN){
+    const dx=x(dFree);
+    g.append("line").attr("x1",dx).attr("x2",dx).attr("y1",0).attr("y2",ih)
+      .attr("stroke","var(--green)").attr("stroke-width",1).attr("stroke-dasharray","3 3").attr("opacity",.5);
+    g.append("text").attr("x",dx+6).attr("y",13).attr("fill","var(--green)").attr("font-size",10.5).attr("font-weight",640)
+      .text("debt-free · age "+Math.round(DATA.startAge+dFree));
+  }
+
+  // hover guide
+  const focus=g.append("g").style("display","none");
+  focus.append("line").attr("y1",0).attr("y2",ih).attr("stroke","var(--ink-faint)").attr("stroke-width",1).attr("stroke-dasharray","2 3");
+  const bisect=d3.bisector(d=>d.year).left;
+  svg.append("rect").attr("x",m.left).attr("y",m.top).attr("width",iw).attr("height",ih).attr("fill","transparent")
+    .on("mousemove",function(e){
+      const mx=d3.pointer(e,g.node())[0];
+      const yr=Math.round(x.invert(mx));
+      const d=series[Math.max(0,Math.min(series.length-1,yr))];
+      focus.style("display",null).select("line").attr("x1",x(d.year)).attr("x2",x(d.year));
+      showTip(`<div class="th">Age ${d.age} · year ${d.year}</div>
+        <div class="tv">${fmtM(d.p50)} median</div>
+        <div style="color:var(--ink-soft);font-size:11px;margin-top:3px">${fmtM(d.p25)} – ${fmtM(d.p75)} likely<br>${fmtM(d.p10)} – ${fmtM(d.p90)} range</div>`,
+        e.clientX,e.clientY);
+    })
+    .on("mouseleave",()=>{focus.style("display","none");hideTip();});
+
+  // readout
+  const lastYr=full.length-1;
+  const terminal=full[lastYr].p50*defl(lastYr);
+  const downside = (cyLo!==null && cyLo<=plotN && cyLo>cy+0.3)
+    ? "<small class='dim'> · even a slow market: age "+Math.floor(DATA.startAge+cyLo)+"</small>" : "";
+  document.getElementById('r-years').innerHTML = cy!==null
+    ? cy.toFixed(1)+" yrs <small>· age "+Math.floor(DATA.startAge+cy)+"</small>"+downside
+    : "beyond 65";
+  document.getElementById('r-terminal').innerHTML = fmtM(terminal)+" <small>"+(real?"today's $":"future $")+"</small>";
+  document.getElementById('r-save').innerHTML = Math.round(savingsRate(STATE.savings)*100)+"% <small>of take-home</small>";
+  document.getElementById('r-debt').innerHTML = isFinite(dFree)
+    ? dFree.toFixed(1)+" yrs <small>· age "+Math.round(DATA.startAge+dFree)+"</small>" : "—";
+
+  // keep the dynamic FIRE-number + SWR labels in sync
+  const tgt=fmtM(target);
+  const mult=1/STATE.swr, multStr=Number.isInteger(mult)?String(mult):mult.toFixed(1);
+  const rateStr=(STATE.swr*100)%1===0 ? (STATE.swr*100)+"%" : (STATE.swr*100).toFixed(1)+"%";
+  document.getElementById('h-fire').textContent   = tgt;
+  document.getElementById('leg-fire').textContent = tgt;
+  document.getElementById('fm-spend').textContent = fmtK(STATE.retireSpend);
+  document.getElementById('fm-target').textContent= tgt;
+  document.getElementById('fm-rule').textContent  = "The "+rateStr+" rule:";
+  document.getElementById('fm-rate').textContent  = rateStr;
+  document.getElementById('fm-mult').textContent  = multStr+"×";
+  document.getElementById('fm-mult2').textContent = multStr;
+}
+
+/* ================================================================
+   VIEW 2 — ECOFLOW / WATERFALL
+   ================================================================ */
+// income on the left; fixed buckets + matches/family (right-side tributaries)
+function flowModel(){
+  const per = STATE.period==='month' ? 1/12 : 1;
+  const m = moneyModel();
+  const C='var(--flow-savings)', M='var(--flow-match)', F='var(--flow-family)', TX='var(--flow-tax)', LV='var(--flow-live)';
+
+  const income=[
+    {label:'Sam · salary',   sub:'base', val:DATA.income.p1Base,  color:C},
+    {label:'Sam · bonus',    sub:'~Feb', val:DATA.income.p1Bonus, color:C},
+    {label:'Jordan · salary',sub:'base', val:DATA.income.p2Base,     color:C},
+  ];
+
+  // right-side waterfall, top → bottom in priority order.
+  // ext = a contribution that joins from the far right (NOT income).
+  const allocs=[
+    {id:'tax',  label:'Taxes',           sub:'~'+Math.round(DATA.effectiveTaxRate*100)+'% eff.', val:m.taxes, color:TX},
+    {id:'k401', label:'401(k) ×2',       sub:'$24.5k ea.', val:m.k401our,   color:C, ext:{label:'Employer match', val:m.k401match,  color:M}},
+    {id:'hsa',  label:'Family HSA',      sub:'capped',     val:m.hsaOur,    color:C, ext:{label:'Employer seed',  val:m.hsaCompany, color:M}},
+    {id:'roth', label:'Backdoor Roth',   sub:'$7.5k ea.',  val:m.roth,      color:C},
+    {id:'p529', label:'529 Plan',        sub:'DC max',     val:m.p529,      color:C},
+    {id:'loan', label:'Student Loans',   sub:'gone ~'+(isFinite(m.debtFreeYears)?m.debtFreeYears.toFixed(1):'∞')+'y', val:m.loanOur+m.extraLoan, color:C, ext:{label:'Family $1k/mo', val:m.loanFamily, color:F}},
+    {id:'brk',  label:'Brokerage',       sub:'taxable',    val:m.brokerage, color:C},
+    {id:'live', label:'Everyday Budget', sub:'→ View 3',   val:m.living,    color:LV},
+  ];
+
+  income.forEach(d=> d.disp=d.val*per);
+  allocs.forEach(d=>{ d.disp=d.val*per; d.total=d.val+(d.ext?d.ext.val:0); d.dispTotal=d.total*per; if(d.ext) d.ext.disp=d.ext.val*per; });
+  return {income, allocs, per, model:m};
+}
+
+/* "Toward your future" running total — names what the savings tier really buys.
+   The tier is only the investing buckets; loan paydown + free money build the future too. */
+function flowSum(){
+  const el=document.getElementById('flow-sum'); if(!el) return;
+  const m=moneyModel(), per=STATE.period==='month'?1/12:1, unit=STATE.period==='month'?'/mo':'/yr';
+  const emp      = m.k401match + m.hsaCompany;             // employer 401(k) match + HSA seed (free money)
+  const invested = (STATE.savings - m.extraLoan) + emp;    // into accounts + brokerage, employer match counted in
+  const ourLoans = m.loanOur + m.extraLoan;                // our cash to student loans (baseline + whatever's left)
+  const fam      = m.loanFamily;                           // family help, $1k/mo toward loans
+  const total    = invested + ourLoans + fam;
+  const f = v => fmt$(v*per);
+  const free = isFinite(m.debtFreeYears) ? '~'+m.debtFreeYears.toFixed(1)+' yrs' : 'never';
+  const brokNote = m.brokerage>0 ? 'plus '+f(m.brokerage)+' to brokerage' : '$0 to brokerage for now';
+  el.innerHTML =
+    `<span class="lbl">Toward our future${unit}:</span>`+
+    `<span class="big">${f(total)}</span>`+
+    `<span class="part"><span class="dot" style="background:var(--flow-savings)"></span>Invested <b>${f(invested)}</b> <span style="color:var(--ink-faint)">incl. ${f(emp)} match</span></span>`+
+    `<span class="part"><span class="dot" style="background:var(--flow-savings)"></span>Student loans <b>${f(ourLoans)}</b></span>`+
+    `<span class="part"><span class="dot" style="background:var(--flow-family)"></span>Family <b>${f(fam)}</b></span>`+
+    `<span class="note">We max the 401ks, HSA, Roths &amp; 529s with the employer match counted in, then throw everything left at the loans — ${brokNote}, debt-free ${free}.</span>`;
+}
+
+/* persistent flow render — particles never stop, even when the amounts change.
+   drawFlow() = full (re)build (first paint + resize);  updateFlow() = soft value change. */
+let FLOW=null, flowRAF=null;
+const flowCurve=(x0,y0,x1,y1)=>{const mx=(x0+x1)/2;return `M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}`;};
+
+function flowLayout(W,H){
+  const {income,allocs,model,per}=flowModel();
+  const incomeX=W*0.115, poolX=W*0.375, allocX=W*0.61, extX=W*0.905;
+  const nodeW=Math.min(168, W*0.205);
+  const extW =Math.min(108, W*0.12);
+  const padY=10;
+  const lay=(arr,x)=>{ const gap=(H-padY*2)/arr.length; arr.forEach((d,i)=>{d.x=x; d.y=padY+gap*i+gap/2;}); };
+  lay(income, incomeX); lay(allocs, allocX);
+  const pool={x:poolX, y:H/2, r:Math.min(nodeW*0.34, H*0.13)};
+  const exts=[]; allocs.forEach(a=>{ if(a.ext) exts.push({...a.ext, x:extX, y:a.y, target:a}); });
+  return {income,allocs,exts,pool,nodeW,extW,per,model};
+}
+function flowWScale(L){
+  const maxV=Math.max(d3.max(L.income,d=>d.disp), d3.max(L.allocs,d=>d.dispTotal));
+  return d3.scaleSqrt().domain([0,maxV]).range(FLOW?FLOW.range:[1.4,18]);
+}
+
+function drawFlowNodes(L){
+  const g=FLOW.gNodes; g.selectAll("*").remove();
+  const {income,allocs,exts,pool,nodeW,extW,per,model}=L;
+  // pool
+  g.append("circle").attr("cx",pool.x).attr("cy",pool.y).attr("r",pool.r)
+    .attr("fill","var(--panel)").attr("stroke","var(--accent)").attr("stroke-width",1.5).attr("filter","url(#glow)");
+  g.append("text").attr("x",pool.x).attr("y",pool.y-9).attr("text-anchor","middle").attr("fill","var(--ink-faint)").attr("font-size",10).attr("letter-spacing",".1em").text("INCOME");
+  g.append("text").attr("x",pool.x).attr("y",pool.y+9).attr("text-anchor","middle").attr("fill","var(--ink)").attr("font-size",15).attr("font-weight",660).text(fmt$(model.income*per));
+  g.append("text").attr("x",pool.x).attr("y",pool.y+23).attr("text-anchor","middle").attr("fill","var(--ink-faint)").attr("font-size",9.5).text("salary + bonus");
+
+  function nodeBox(d,{anchorRight=false,w=nodeW,val,color,label,sub}){
+    const bx=d.x-w/2, bh=44, by=d.y-bh/2;
+    const gg=g.append("g");
+    gg.append("rect").attr("class","node-box").attr("x",bx).attr("y",by).attr("width",w).attr("height",bh).attr("rx",7);
+    gg.append("rect").attr("x",anchorRight?bx+w-3:bx).attr("y",by).attr("width",3).attr("height",bh).attr("fill",color).attr("rx",1.5);
+    // line 1: label — line 2: value (left, colour) + sub (right, faint, well clear of the value)
+    gg.append("text").attr("class","node-label").attr("x",bx+11).attr("y",by+17).attr("font-size",11).text(label);
+    gg.append("text").attr("x",bx+11).attr("y",by+33).attr("fill",color).attr("font-size",11.5).attr("font-weight",640).text(fmt$(val));
+    if(sub) gg.append("text").attr("class","node-sub").attr("x",bx+w-9).attr("y",by+33).attr("text-anchor","end").attr("font-size",8).text(sub);
+  }
+  function extBox(d){
+    const w=extW, bh=38, bx=d.x-w/2, by=d.y-bh/2;
+    const gg=g.append("g");
+    gg.append("rect").attr("class","node-box").attr("x",bx).attr("y",by).attr("width",w).attr("height",bh).attr("rx",7);
+    gg.append("rect").attr("x",bx).attr("y",by).attr("width",3).attr("height",bh).attr("fill",d.color).attr("rx",1.5);
+    gg.append("text").attr("class","node-sub").attr("x",bx+10).attr("y",by+15).attr("font-size",9).text(d.label);
+    gg.append("text").attr("x",bx+10).attr("y",by+30).attr("fill",d.color).attr("font-size",11.5).attr("font-weight",620).text(fmt$(d.disp));
+  }
+  income.forEach(d=> nodeBox(d,{anchorRight:false, val:d.disp,      color:d.color, label:d.label, sub:d.sub}));
+  allocs.forEach(d=> nodeBox(d,{anchorRight:true,  val:d.dispTotal, color:d.color, label:d.label, sub:d.sub}));
+  exts.forEach(extBox);
+}
+
+function reconcileParticles(){
+  const links=FLOW.links;
+  links.forEach((lk,li)=>{
+    const desired=Math.max(2, Math.round(lk.w/1.7));
+    const cur=FLOW.particles.filter(p=>p.li===li).length;
+    if(cur<desired){ for(let k=cur;k<desired;k++) FLOW.particles.push({li, t:Math.random(), speed:0.0015+Math.random()*0.0014}); }
+    else if(cur>desired){ let rm=cur-desired; FLOW.particles=FLOW.particles.filter(p=>{ if(p.li===li&&rm>0){rm--;return false;} return true; }); }
+  });
+  FLOW.pSel=FLOW.gParts.selectAll("circle").data(FLOW.particles).join("circle")
+    .attr("r",p=>Math.max(1.5,FLOW.links[p.li].w*0.28)).attr("fill",p=>FLOW.links[p.li].color).attr("filter","url(#glow)");
+}
+
+function flowTick(){
+  if(FLOW&&FLOW.pSel){
+    const links=FLOW.links;
+    FLOW.pSel.each(function(p){
+      p.t+=p.speed; if(p.t>1)p.t-=1;
+      const lk=links[p.li]; const pt=lk.el.getPointAtLength(p.t*lk.len);
+      const o=p.t<0.1?p.t*10:p.t>0.9?(1-p.t)*10:1;
+      d3.select(this).attr("cx",pt.x).attr("cy",pt.y).attr("opacity",0.5+0.5*o);
+    });
+  }
+  flowRAF=requestAnimationFrame(flowTick);
+}
+
+function drawFlow(){   // full build
+  const svg=d3.select("#flow-chart"); svg.selectAll("*").remove();
+  const box=svg.node().parentNode.getBoundingClientRect();
+  const W=box.width,H=box.height;
+  const defs=svg.append("defs");
+  const glow=defs.append("filter").attr("id","glow").attr("x","-60%").attr("y","-60%").attr("width","220%").attr("height","220%");
+  glow.append("feGaussianBlur").attr("stdDeviation","2.6").attr("result","b");
+  const fm=glow.append("feMerge"); fm.append("feMergeNode").attr("in","b"); fm.append("feMergeNode").attr("in","SourceGraphic");
+
+  const gLinks=svg.append("g"), gNodes=svg.append("g"), gParts=svg.append("g");
+  FLOW={svg,W,H,gNodes,gParts,links:[],particles:[],pSel:null,range:[1.4,Math.min(18,H*0.044)]};
+
+  const L=flowLayout(W,H);
+  const wScale=flowWScale(L);
+  function pipe(x0,y0,x1,y1,w,color){
+    const p=flowCurve(x0,y0,x1,y1);
+    const bg=gLinks.append("path").attr("d",p).attr("fill","none").attr("stroke","var(--flow-pipe)").attr("stroke-width",w+2).attr("stroke-linecap","round").node();
+    const el=gLinks.append("path").attr("d",p).attr("fill","none").attr("stroke",color).attr("stroke-width",w).attr("opacity",.26).attr("stroke-linecap","round").node();
+    FLOW.links.push({el,bg,color,w,len:el.getTotalLength()});
+  }
+  L.income.forEach(d=> pipe(d.x+L.nodeW/2, d.y, L.pool.x-L.pool.r*0.92, L.pool.y, wScale(d.disp), d.color));
+  L.allocs.forEach(d=> pipe(L.pool.x+L.pool.r*0.92, L.pool.y, d.x-L.nodeW/2, d.y, wScale(d.disp), d.color));
+  L.exts.forEach(d=> pipe(d.x-L.extW/2, d.y, d.target.x+L.nodeW/2, d.target.y, wScale(d.disp), d.color));
+
+  drawFlowNodes(L);
+  reconcileParticles();
+  flowSum();
+  if(!flowRAF) flowTick();
+}
+
+function updateFlow(){  // soft change — paths stay put, particles keep flowing
+  if(!FLOW) return drawFlow();
+  const L=flowLayout(FLOW.W,FLOW.H);
+  const wScale=flowWScale(L);
+  [...L.income, ...L.allocs, ...L.exts].forEach((d,i)=>{
+    const lk=FLOW.links[i]; if(!lk) return;
+    lk.w=wScale(d.disp);
+    d3.select(lk.el).transition().duration(450).attr("stroke-width",lk.w);
+    d3.select(lk.bg).transition().duration(450).attr("stroke-width",lk.w+2);
+  });
+  drawFlowNodes(L);
+  reconcileParticles();
+  flowSum();
+}
+
+/* ================================================================
+   VIEW 3 — BUDGET
+   ================================================================ */
+// non-rent weights = real historical $ (Jan 2022 – Jun 2026 screenshot);
+// rent is excluded (slider-driven). hist values are normalised at runtime.
+const BUDGET_CATS=[
+  {id:'rent',     label:'Rent / Housing',  sub:'set by slider',                  color:'#818cf8', slider:true},
+  {id:'transport',label:'Transportation',  sub:'car, gas, insurance, transit',   color:'#34d399', hist:53193},
+  {id:'fitness',  label:'Health & Fitness',sub:'running, cycling, ski, races',    color:'#fbbf24', hist:37851},
+  {id:'food',     label:'Food & Dining',   sub:'dining out, groceries, coffee',   color:'#f472b6', hist:37445},
+  {id:'shopping', label:'Shopping & Tech',  sub:'clothing, electronics, hi-fi',   color:'#60a5fa', hist:29685},
+  {id:'misc',     label:'Everyday & Misc',  sub:'subscriptions, household, etc.', color:'#94a3b8', hist:23741},
+  {id:'home',     label:'Home & Utilities', sub:'improvement, hobbies, power',    color:'#22d3ee', hist:16477},
+  {id:'travel',   label:'Travel',           sub:'trips & getaways',               color:'#a78bfa', hist:13892},
+  {id:'gifts',    label:'Gifts & Fun',      sub:'gifts, fun money',               color:'#fb923c', hist:5188},
+];
+
+function drawBudget(){
+  const annual = moneyModel().living;
+  const total  = STATE.period==='month' ? annual/12 : annual;
+  const rent   = total * STATE.rentPct/100;
+  const rest   = total - rent;
+  const others = BUDGET_CATS.filter(c=>!c.slider);
+  const sumH   = d3.sum(others, c=>c.hist);
+
+  // rent danger zones — comfortable ≤40%, pushing it ≤45%, danger above
+  // (hex, not var(), so the `${color}aa` translucent bar stays valid)
+  const zone = STATE.rentPct<=40 ? {c:'#34d399', t:'comfortable'}
+             : STATE.rentPct<=45 ? {c:'#fbbf24', t:'pushing it'}
+             : {c:'#ef4444',  t:'danger zone — eats your future'};
+  const rows = BUDGET_CATS.map(c=> c.slider
+    ? {...c, color:zone.c, val: rent}
+    : {...c, val: rest * (c.hist/sumH)});
+  const max = d3.max(rows, r=>r.val);
+
+  const grid=document.getElementById('budget-grid');
+  grid.innerHTML='';
+  rows.forEach(r=>{
+    const pctTotal=(r.val/total*100);
+    const el=document.createElement('div');
+    el.className='brow';
+    el.innerHTML=`
+      <div class="blabel">${r.label}<small>${r.sub}</small></div>
+      <div class="bbar-track"><div class="bbar" style="width:${(r.val/max*100)}%;background:linear-gradient(90deg,${r.color},${r.color}aa)"></div></div>
+      <div class="bval">${fmt$(r.val)}<small> · ${pctTotal.toFixed(0)}%</small></div>`;
+    grid.appendChild(el);
+  });
+
+  const rp=document.getElementById('rent-pct'); rp.textContent=STATE.rentPct+'%'; rp.style.color=zone.c;
+  const rz=document.getElementById('rent-zone'); rz.textContent=zone.t; rz.style.color=zone.c;
+  document.getElementById('bud-total').textContent =
+    fmt$(total) + (STATE.period==='month' ? ' /mo' : ' /yr');
+}
+
+/* ================================================================
+   VIEW 4 — THE SETUP (automation blueprint)
+   ================================================================ */
+function setupNodes(){
+  const combined = STATE.combined;
+  const G='var(--flow-savings)', B='var(--flow-match)', P='var(--flow-family)',
+        CY='#22d3ee', AM='var(--flow-live)', RO='var(--flow-tax)', INK='var(--ink-soft)';
+  const N={}; const add=(id,o)=>{N[id]=Object.assign({id},o);};
+  const links=[]; const L=(a,b,color,future)=>links.push({a,b,color,future:!!future});
+
+  // sources
+  add('src_ch', {xf:.105,yf:.18,title:'Sam',          sub:'payroll · pre-tax',     color:G});
+  add('src_co', {xf:.105,yf:.50,title:'Jordan',       sub:'payroll · pre-tax',     color:G});
+  add('src_pat',{xf:.105,yf:.84,title:'Family',       sub:'gift help',             color:P});
+  // payroll automations (pre-tax, inside the paycheck)
+  add('ch401',{xf:.35,yf:.13,title:'Sam 401(k)',     sub:'$24,500 → max by Dec',badge:'+ employer match',color:G,cad:'every paycheck · pre-tax'});
+  add('hsa',  {xf:.35,yf:.30,title:'Family HSA',      sub:'$7,750 + $1,000 seed',  color:G,cad:'every paycheck · invested'});
+  add('co401',{xf:.35,yf:.49,title:'Jordan 401(k)',  sub:'$24,500 → max by Dec',  badge:'+ employer match',color:G,cad:'every paycheck · pre-tax'});
+  add('loans',{xf:.35,yf:.78,title:'Student Loans',   sub:'$36k/yr + lumps',         color:RO,cad:'auto ~$3k/mo',badge:'+ occasional lump sums',badgeC:'#34d399'});
+  // shared investment destinations
+  add('d529a',{xf:.865,yf:.12,title:'529 · kid 1',      sub:'$4,000 / yr',         color:CY,cad:'monthly auto-transfer'});
+  add('d529b',{xf:.865,yf:.28,title:'529 · kid 2',      sub:'$4,000 / yr',         color:CY,cad:'monthly auto-transfer'});
+  add('roth', {xf:.865,yf:.44,title:'Backdoor Roth ×2', sub:'$15,000 total',       color:G,cad:'one lump · January'});
+
+  // pre-tax payroll wiring (same in both modes)
+  L('src_ch','ch401',G); L('src_ch','hsa',G); L('src_co','co401',G);
+  L('src_co','loans',G); L('src_pat','loans',P);
+
+  if(combined){
+    add('hub',  {xf:.60,yf:.30,title:'Joint Checking',  sub:'both paychecks pooled', color:INK, hub:true});
+    add('efund',{xf:.60,yf:.70,title:'Emergency Fund',  sub:'3–6 mo · HYSA',          color:CY, cad:'kept full first — our floor'});
+    add('brok', {xf:.865,yf:.66,title:'Joint Brokerage',sub:'after loans clear',      color:AM, faded:true});
+    L('src_ch','hub',G); L('src_co','hub',G);
+    L('hub','efund',CY);                    // safety net stays full before investing
+    L('hub','d529a',G); L('hub','d529b',G); L('hub','roth',G);
+    L('loans','brok',AM,true);              // brokerage begins once the loans are gone
+  } else {
+    add('hub',     {xf:.60,yf:.20,title:"Sam's Checking",     sub:'main hub · funds goals',color:INK,hub:true});
+    add('efund',   {xf:.60,yf:.49,title:'Emergency Fund',     sub:'3–6 mo · HYSA',color:CY,cad:'kept full first — the floor'});
+    add('co_check',{xf:.60,yf:.78,title:"Jordan's Checking",  sub:'their net pay lands here',color:G,cad:'covers their expenses first'});
+    add('chbrok',  {xf:.865,yf:.60,title:'Sam — Brokerage',   sub:'after loans clear',color:AM,faded:true});
+    add('cobrok',  {xf:.865,yf:.84,title:'Jordan — Brokerage',sub:'after loans clear',color:AM,faded:true});
+    L('src_ch','hub',G);
+    L('src_co','co_check',G);               // her paycheck → her own checking
+    L('hub','efund',CY);                    // safety net stays full before investing
+    L('hub','d529a',G); L('hub','d529b',G); L('hub','roth',G);
+    L('loans','chbrok',AM,true);            // his brokerage begins once the loans clear
+    L('loans','cobrok',AM,true);            // hers begins then too
+  }
+  return {N,links};
+}
+
+function drawSetup(){
+  const svg=d3.select("#setup-chart"); svg.selectAll("*").remove();
+  const box=svg.node().parentNode.getBoundingClientRect();
+  const W=box.width,H=box.height;
+  const {N,links}=setupNodes();
+  const cw=Math.min(150, W*0.185), chh=44;
+  Object.values(N).forEach(d=>{ d.x=d.xf*W; d.y=d.yf*H; d.w=cw; });
+
+  const gW=svg.append("g"), gN=svg.append("g");
+  const curve=(x0,y0,x1,y1)=>{const mx=(x0+x1)/2;return `M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}`;};
+
+  // column headers
+  [['Paychecks & family',.105],['Auto-deducted · pre-tax',.35],['Lands in checking',.60],['Auto-invested',.865]]
+    .forEach(([t,xf])=> gN.append("text").attr("class","col-head").attr("x",xf*W).attr("y",12).attr("text-anchor","middle").text(t));
+
+  // wires
+  let futureLabeled=false;
+  links.forEach(lk=>{
+    const a=N[lk.a], b=N[lk.b]; if(!a||!b) return;
+    const p=curve(a.x+a.w/2, a.y, b.x-b.w/2, b.y);
+    if(!lk.future) gW.append("path").attr("class","wire-bg").attr("d",p).attr("stroke-width",3);
+    gW.append("path").attr("class","wire"+(lk.future?" future":"")).attr("d",p).attr("stroke",lk.color).attr("stroke-width",lk.future?1.4:1.9);
+    if(lk.future && !futureLabeled){
+      futureLabeled=true;
+      const mx=(a.x+a.w/2+b.x-b.w/2)/2, my=(a.y+b.y)/2;
+      gW.append("text").attr("x",mx).attr("y",my-7).attr("text-anchor","middle").attr("font-size",8.5).attr("fill",lk.color).attr("opacity",.85).text("once loans are paid off → brokerage begins");
+    }
+  });
+
+  // nodes
+  Object.values(N).forEach(d=>{
+    const w=d.w,h=chh,x=d.x-w/2,y=d.y-h/2;
+    const g=gN.append("g");
+    const nb=g.append("rect").attr("class","node-box").attr("x",x).attr("y",y).attr("width",w).attr("height",h).attr("rx",d.hub?9:7)
+      .attr("stroke",d.hub?"var(--accent)":"var(--line)").attr("stroke-width",d.hub?1.3:1);
+    if(d.faded) nb.attr("stroke","var(--ink-faint)").attr("stroke-dasharray","3 3");  // "future / not yet" cue
+    g.append("rect").attr("x",x).attr("y",y).attr("width",3).attr("height",h).attr("fill",d.color).attr("rx",1.5).attr("opacity",d.faded?.6:1);
+    g.append("text").attr("class","snode-title").attr("x",x+11).attr("y",y+18).text(d.title);
+    g.append("text").attr("class","snode-sub").attr("x",x+11).attr("y",y+32).text(d.sub);
+    if(d.badge){
+      const bc=d.badgeC||'#60a5fa';
+      const bw=d.badge.length*5.0+16;
+      g.append("rect").attr("x",d.x-bw/2).attr("y",y+h+5).attr("width",bw).attr("height",15).attr("rx",7)
+        .attr("fill",bc+'22').attr("stroke",bc).attr("stroke-width",.7);
+      g.append("text").attr("x",d.x).attr("y",y+h+15.4).attr("text-anchor","middle").attr("font-size",8.5).attr("fill",bc).text(d.badge);
+    }
+    if(d.cad) g.append("text").attr("class","cad").attr("x",d.x).attr("y",y+h+(d.badge?32:13)).attr("text-anchor","middle").text(d.cad);
+  });
+}
+
+/* ================================================================
+   CONTROLS WIRING
+   ================================================================ */
+function syncSavingsButtons(){
+  document.querySelectorAll('#savings-toggle button, #savings-toggle-2 button').forEach(b=>{
+    b.classList.toggle('on', +b.dataset.v===STATE.savings);
+  });
+  const st=document.getElementById('setup-tier');
+  if(st) st.textContent = fmtK(STATE.savings);   // View 4 intro tracks the chosen tier
+  syncLoanSlider();
+}
+/* the extra-to-loans dial: its ceiling is the flexible (brokerage) slice of the tier */
+function syncLoanSlider(){
+  const sl=document.getElementById('loan-slider'); if(!sl) return;
+  const max=moneyModel().maxExtra;
+  if(STATE.extraLoan>max) STATE.extraLoan=max;
+  sl.max=max; sl.value=STATE.extraLoan;
+  updateLoanBadge();
+}
+function updateLoanBadge(){
+  const b=document.getElementById('loan-badge'); if(!b) return;
+  const m=moneyModel();
+  const free=isFinite(m.debtFreeYears)?'~'+m.debtFreeYears.toFixed(1)+' yrs':'never';
+  b.innerHTML = (m.extraLoan>0?'+'+fmt$(m.extraLoan)+'/yr to loans → ':'just the automatic $36k/yr → ')
+    +'<b class="free">debt-free '+free+'</b> · brokerage <b>'+fmt$(m.brokerage)+'/yr</b>';
+}
+// stamp each tier button with its savings rate (% of gross, excl. match)
+function setSavingsRates(){
+  document.querySelectorAll('#savings-toggle button, #savings-toggle-2 button').forEach(b=>{
+    const span=b.querySelector('.rate');
+    if(span) span.textContent = Math.round(savingsRate(+b.dataset.v)*100)+'%';
+  });
+}
+function syncPeriodButtons(){
+  document.querySelectorAll('#period-toggle button, #period-toggle-b button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.p===STATE.period);
+  });
+}
+function syncRetireButtons(){
+  document.querySelectorAll('#retire-toggle button').forEach(b=>{
+    b.classList.toggle('on', +b.dataset.v===STATE.retireSpend);
+  });
+}
+function syncCombineButtons(){
+  document.querySelectorAll('#combine-toggle button').forEach(b=>{
+    b.classList.toggle('on', (b.dataset.c==='combined')===STATE.combined);
+  });
+}
+function syncSwrButtons(){
+  document.querySelectorAll('#swr-toggle button').forEach(b=>b.classList.toggle('on', +b.dataset.s===STATE.swr));
+}
+function syncGrowthButtons(){
+  document.querySelectorAll('#growth-toggle button').forEach(b=>b.classList.toggle('on', +b.dataset.g===STATE.incomeGrowth));
+}
+function syncDollarButtons(){
+  document.querySelectorAll('#dollar-toggle button').forEach(b=>b.classList.toggle('on', (b.dataset.r==='1')===STATE.realDollars));
+}
+
+document.querySelectorAll('#savings-toggle button, #savings-toggle-2 button').forEach(b=>{
+  b.onclick=()=>{ STATE.savings=+b.dataset.v; syncSavingsButtons(); drawMC(); updateFlow(); drawBudget(); };
+});
+document.querySelectorAll('#retire-toggle button').forEach(b=>{
+  b.onclick=()=>{ STATE.retireSpend=+b.dataset.v; syncRetireButtons(); drawMC(); };
+});
+document.querySelectorAll('#swr-toggle button').forEach(b=>{
+  b.onclick=()=>{ STATE.swr=+b.dataset.s; syncSwrButtons(); drawMC(); };
+});
+document.querySelectorAll('#growth-toggle button').forEach(b=>{
+  b.onclick=()=>{ STATE.incomeGrowth=+b.dataset.g; syncGrowthButtons(); drawMC(); };
+});
+document.querySelectorAll('#dollar-toggle button').forEach(b=>{
+  b.onclick=()=>{ STATE.realDollars=(b.dataset.r==='1'); syncDollarButtons(); drawMC(); };
+});
+document.getElementById('inherit-toggle').onclick=function(){
+  STATE.inherit=!STATE.inherit;
+  this.classList.toggle('on',STATE.inherit);
+  this.setAttribute('aria-checked',STATE.inherit);
+  drawMC();
+};
+document.querySelectorAll('#period-toggle button, #period-toggle-b button').forEach(b=>{
+  b.onclick=()=>{ STATE.period=b.dataset.p; syncPeriodButtons(); updateFlow(); drawBudget(); };
+});
+document.getElementById('rent-slider').oninput=function(){
+  STATE.rentPct=+this.value; drawBudget();
+};
+const loanSlider=document.getElementById('loan-slider');
+loanSlider.oninput=function(){ STATE.extraLoan=+this.value; updateLoanBadge(); updateFlow(); };  // live: watch brokerage ↔ loans shift
+loanSlider.onchange=function(){ STATE.extraLoan=+this.value; drawMC(); };                        // on release: re-run View 1 net worth
+document.querySelectorAll('#combine-toggle button').forEach(b=>{
+  b.onclick=()=>{ STATE.combined=(b.dataset.c==='combined'); syncCombineButtons(); drawSetup(); };
+});
+
+/* ================================================================
+   SCROLLYTELLING — dots, IntersectionObserver, keyboard
+   ================================================================ */
+const scenes=[...document.querySelectorAll('.scene')];
+const labels=['Future Vision','Flow of Money','The Reality','The Setup'];
+const scroller=document.getElementById('scroller');
+const dotsWrap=document.getElementById('dots');
+scenes.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.dataset.label=labels[i];
+  b.onclick=()=>scenes[i].scrollIntoView({behavior:'smooth'});
+  dotsWrap.appendChild(b);
+});
+const dots=[...dotsWrap.children];
+let current=0;
+const io=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting && e.intersectionRatio>0.55){
+      current=scenes.indexOf(e.target);
+      dots.forEach((d,i)=>d.classList.toggle('active',i===current));
+    }
+  });
+},{root:scroller,threshold:[0.55]});
+scenes.forEach(s=>io.observe(s));
+
+window.addEventListener('keydown',e=>{
+  if(['ArrowDown','ArrowRight','PageDown'].includes(e.key)){
+    e.preventDefault();
+    if(current<scenes.length-1) scenes[current+1].scrollIntoView({behavior:'smooth'});
+  } else if(['ArrowUp','ArrowLeft','PageUp'].includes(e.key)){
+    e.preventDefault();
+    if(current>0) scenes[current-1].scrollIntoView({behavior:'smooth'});
+  }
+});
+
+/* ================================================================
+   INIT + responsive redraw
+   ================================================================ */
+function renderAll(){ drawMC(); drawFlow(); drawBudget(); drawSetup(); }
+syncSavingsButtons(); syncPeriodButtons(); syncRetireButtons(); syncCombineButtons(); setSavingsRates();
+syncSwrButtons(); syncGrowthButtons(); syncDollarButtons();
+// defer first paint until the flex layout has resolved real dimensions,
+// otherwise the SVGs measure near-zero and draw tiny
+requestAnimationFrame(()=>requestAnimationFrame(renderAll));
+window.addEventListener('load',renderAll);
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(renderAll,180);});
+</script>
+</body>
+</html>
